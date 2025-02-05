@@ -1,6 +1,7 @@
 import os
 from dotenv import load_dotenv
 import requests
+from datetime import datetime
 
 WEIGHT_KG = 63.5
 HEIGHT_CM = 167.64
@@ -26,3 +27,30 @@ request_headers = {
 response = requests.post(url=exercise_endpoint, json=parameters, headers=request_headers)
 result = response.json()
 print(result)
+
+
+# storing workout data to google sheet
+today_date = datetime.now().strftime('%d/%m/%y')
+now_time = datetime.now().strftime('%X')
+
+shetty_endpoint = os.getenv('SHETTY_ENDPOINT')
+for exercise in result['exercises']:
+    sheet_inputs = {
+        'workout': {
+            'date': today_date,
+            'time': now_time,
+            'exercise': exercise['name'].title(),
+            'duration': exercise['duration_min'],
+            'calories': exercise['nf_calories']
+        }
+    }
+    # with no authentication
+    # shetty_response = requests.post(url=shetty_endpoint, json=sheet_inputs)
+    # print(shetty_response.text)
+
+    # with basic authentication
+    authorization_header = {
+        'Authorization': os.getenv('AUTH_HEADER')
+    }
+    sheet_response = requests.post(url=shetty_endpoint, json=sheet_inputs, auth=(os.getenv('MY_USERNAME'),  os.getenv('MY_PASSWORD')))
+    print(sheet_response.text)
